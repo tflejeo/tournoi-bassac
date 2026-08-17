@@ -673,6 +673,16 @@ let selFfa = [];
 let selFfaWinner = null;
 let historyDateFilter = '';
 
+/* valeurs des champs de saisie, tenues à jour à chaque frappe (voir oninput plus bas).
+   On ne relit plus le DOM pour "deviner" ces valeurs avant de reconstruire le formulaire :
+   c'est cette source unique qui pilote l'affichage, ce qui évite qu'une valeur tapée
+   se perde si un re-rendu (sync Firebase en temps réel, ajout d'un participant, etc.)
+   survient pendant la saisie. */
+let scoreDateVal = null;      // string 'YYYY-MM-DD' ou null (= pas encore touché -> aujourd'hui)
+let duelScoreAVal = '';
+let duelScoreBVal = '';
+let ffaScoreVals = {};        // { playerId: string }
+
 function todayStr(){
   const d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
@@ -1042,6 +1052,7 @@ window.setRankingMode = function(mode){
    ============================================================ */
 function resetScoreSelection(){
   selTeamA = []; selTeamB = []; selDuelWinner = null; selFfa = []; selFfaWinner = null;
+  scoreDateVal = null; duelScoreAVal = ''; duelScoreBVal = ''; ffaScoreVals = {};
 }
 
 window.setScoreFormat = function(fmt){
@@ -1125,6 +1136,7 @@ window.addFfaParticipant = function(id){
 window.removeFfaParticipant = function(id){
   selFfa = selFfa.filter(x=>x!==id);
   if(selFfaWinner===id) selFfaWinner = null;
+  delete ffaScoreVals[id];
   renderScoreForm();
 }
 window.setFfaWinner = function(id){
@@ -1141,15 +1153,10 @@ function renderFormatTabs(){
   `;
 }
 
-function currentFormValues(){
-  const vals = {};
-  ['matchDateInput','scoreAInput','scoreBInput'].forEach(id=>{
-    const elx = document.getElementById(id);
-    if(elx) vals[id] = elx.value;
-  });
-  document.querySelectorAll('[id^="scoreFfa_"]').forEach(inp => { vals[inp.id] = inp.value; });
-  return vals;
-}
+window.setScoreDate = function(v){ scoreDateVal = v; }
+window.setDuelScoreA = function(v){ duelScoreAVal = v; }
+window.setDuelScoreB = function(v){ duelScoreBVal = v; }
+window.setFfaScore = function(id, v){ ffaScoreVals[id] = v; }
 
 function renderScoreForm(){
   const el = document.getElementById('scoreForm');
@@ -1164,22 +1171,19 @@ function renderScoreForm(){
     return;
   }
 
-  const preserved = currentFormValues();
-  const dateVal = preserved.matchDateInput || todayStr();
+  const dateVal = scoreDateVal || todayStr();
   const formatHint = scoreFormat === 'duel'
     ? `<p class="picker-hint" style="margin:0 0 12px;">1 vs 1, 2 vs 2, 3 vs 3… deux équipes s'affrontent.</p>`
     : `<p class="picker-hint" style="margin:0 0 12px;">Partie à plusieurs (4, 8…) avec un seul vainqueur — idéal pour les jeux de société.</p>`;
   const dateBlock = `
     <div class="picker-group">
       <div class="picker-label">📅 Date du match</div>
-      <input type="date" id="matchDateInput" class="date-input" value="${dateVal}">
+      <input type="date" id="matchDateInput" class="date-input" value="${dateVal}" onchange="setScoreDate(this.value)">
     </div>
   `;
 
   if(scoreFormat === 'duel'){
     const canSubmit = selTeamA.length>0 && selTeamB.length>0 && !!selDuelWinner;
-    const scoreAVal = preserved.scoreAInput ?? '';
-    const scoreBVal = preserved.scoreBInput ?? '';
     el.innerHTML = formatHint + dateBlock + `
       <div class="picker-group">
         <div class="picker-label"><span class="tag-a">●</span> Équipe A</div>
@@ -1200,12 +1204,12 @@ function renderScoreForm(){
       <div class="score-entry-row">
         <div class="score-entry-box">
           <label>Score A (facultatif)</label>
-          <input type="number" inputmode="numeric" min="0" id="scoreAInput" placeholder="—" value="${scoreAVal}">
+          <input type="number" inputmode="numeric" min="0" id="scoreAInput" placeholder="—" value="${duelScoreAVal}" oninput="setDuelScoreA(this.value)">
         </div>
         <span class="score-entry-sep">–</span>
         <div class="score-entry-box">
           <label>Score B (facultatif)</label>
-          <input type="number" inputmode="numeric" min="0" id="scoreBInput" placeholder="—" value="${scoreBVal}">
+          <input type="number" inputmode="numeric" min="0" id="scoreBInput" placeholder="—" value="${duelScoreBVal}" oninput="setDuelScoreB(this.value)">
         </div>
       </div>
       <p class="picker-hint">Le score est juste indicatif : il n'influence pas les points, c'est le vainqueur choisi ci-dessus qui compte.</p>
@@ -1235,10 +1239,10 @@ function renderScoreForm(){
         <div class="picker-chips" style="gap:10px;">
           ${selFfa.map(id => {
             const p = players[id];
-            const val = preserved['scoreFfa_'+id] ?? '';
+            const val = ffaScoreVals[id] ?? '';
             return `<div style="display:flex; align-items:center; gap:6px;">
               <span style="font-size:12.5px; color:var(--text-dim); font-weight:600;">${escapeHtml(p?.name||'?')}</span>
-              <input type="number" inputmode="numeric" min="0" id="scoreFfa_${id}" placeholder="—" value="${val}"
+              <input type="number" inputmode="numeric" min="0" id="scoreFfa_${id}" placeholder="—" value="${val}" oninput="setFfaScore('${id}', this.value)"
                 style="width:56px; height:36px; text-align:center; background:var(--surface-2); border:1px solid var(--border); border-radius:8px; color:var(--text); outline:none;">
             </div>`;
           }).join('')}
@@ -1255,9 +1259,9 @@ window.submitDuelScore = async function(){
   if(selTeamA.length===0 || selTeamB.length===0){ showToast('Sélectionne les joueurs des deux équipes'); return; }
   if(!selDuelWinner){ showToast('Désigne l\'équipe vainqueur'); return; }
 
-  const dateVal = document.getElementById('matchDateInput').value || todayStr();
-  const scoreAraw = document.getElementById('scoreAInput').value;
-  const scoreBraw = document.getElementById('scoreBInput').value;
+  const dateVal = scoreDateVal || todayStr();
+  const scoreAraw = duelScoreAVal;
+  const scoreBraw = duelScoreBVal;
 
   let scoreA = null, scoreB = null;
   if(scoreAraw !== '' || scoreBraw !== ''){
@@ -1283,11 +1287,11 @@ window.submitFfaScore = async function(){
   if(selFfa.length < 2){ showToast('Sélectionne au moins 2 participants'); return; }
   if(!selFfaWinner || !selFfa.includes(selFfaWinner)){ showToast('Désigne le vainqueur'); return; }
 
-  const dateVal = document.getElementById('matchDateInput').value || todayStr();
+  const dateVal = scoreDateVal || todayStr();
   const scores = {};
   let hasScore = false;
   for(const pid of selFfa){
-    const raw = document.getElementById('scoreFfa_'+pid)?.value ?? '';
+    const raw = ffaScoreVals[pid] ?? '';
     if(raw !== ''){
       const v = parseInt(raw,10);
       if(isNaN(v) || v<0){ showToast('Score invalide pour un participant'); return; }
