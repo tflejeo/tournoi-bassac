@@ -505,7 +505,7 @@ main{padding-bottom:20px;}
     <!-- SAISIE D'UN SCORE -->
     <section id="view-score" class="view">
       <div class="sport-select-wrap">
-        <select id="sportSelectScore" class="player-select" onchange="handleSportSelect(this.value, false)"></select>
+        <select id="sportSelectScore" class="player-select" onchange="handleScoreSportSelect(this.value)"></select>
       </div>
       <div class="filter-row secondary" id="formatTabsScore"></div>
       <div id="scoreForm" class="score-card"></div>
@@ -525,7 +525,7 @@ main{padding-bottom:20px;}
     <!-- CLASSEMENT -->
     <section id="view-ranking" class="view">
       <div class="sport-select-wrap">
-        <select id="sportSelectRanking" class="player-select" onchange="handleSportSelect(this.value, true)"></select>
+        <select id="sportSelectRanking" class="player-select" onchange="handleRankingSportSelect(this.value)"></select>
       </div>
       <h3 class="section-heading" id="rankingHeading">Classement</h3>
       <div id="podium" class="podium"></div>
@@ -651,8 +651,9 @@ let players = {};        // { id: {name, active, createdAt, order} }
 let sports = {};         // { id: {name, emoji, order, createdAt} }
 let matchesBySport = {}; // { sportId: { matchId: {format, teamA/teamB/scoreA/scoreB OR participants/winnerId, createdAt} } }
 let currentView = 'players';
-let currentSportId = null;
-let rankingMode = 'sport'; // 'sport' | 'general'
+let currentSportId = null;   // sport sélectionné pour la SAISIE D'UN SCORE — jamais pré-sélectionné automatiquement
+let rankingSportId = null;   // sport sélectionné pour le CLASSEMENT en mode "par discipline"
+let rankingMode = 'general'; // 'sport' | 'general' — le classement démarre en vue générale
 let room = 'amical';
 const MAX_PLAYERS = 24;
 
@@ -815,7 +816,8 @@ function startApp(cfg){
 async function runInitRoutines(){
   await maybeSeedDefaultSports();
   if(Object.keys(sports).length === 0){ renderAll(); return; } // en attente du retour du seed
-  ensureCurrentSport();
+  cleanupCurrentSportId();
+  ensureRankingSportDefault();
   await maybeMigrateLegacyMatches();
   await maybeUpgradeMatchesV3();
   renderAll();
@@ -969,11 +971,19 @@ function sortedSportEntries(){
   return Object.entries(sports).sort((a,b) => (a[1].order??0) - (b[1].order??0));
 }
 
-function ensureCurrentSport(){
+/* la saisie de score ne se pré-sélectionne JAMAIS toute seule : on force le choix.
+   On nettoie juste le cas où le sport actuellement sélectionné a été supprimé. */
+function cleanupCurrentSportId(){
+  if(currentSportId && !sports[currentSportId]) currentSportId = null;
+}
+
+/* le classement, lui, doit toujours pouvoir retomber sur une discipline valide
+   dès qu'on quitte le mode "Général" */
+function ensureRankingSportDefault(){
   const entries = sortedSportEntries();
-  if(!entries.length){ currentSportId = null; return; }
-  if(!currentSportId || !sports[currentSportId]){
-    currentSportId = entries[0][0];
+  if(!entries.length){ rankingSportId = null; return; }
+  if(!rankingSportId || !sports[rankingSportId]){
+    rankingSportId = entries[0][0];
   }
 }
 
@@ -1003,15 +1013,22 @@ window.deleteSport = async function(id){
     };
     await update(ref(db), updates);
     if(currentSportId === id) currentSportId = null;
+    if(rankingSportId === id) rankingSportId = null;
     showToast(`${s.name} supprimée`);
   }catch(e){ console.error(e); }
 }
 
-window.selectSport = function(id){
+window.selectScoreSport = function(id){
   if(!sports[id]) return;
+  if(currentSportId !== id) resetScoreSelection();
   currentSportId = id;
+  renderAll();
+}
+
+window.selectRankingSport = function(id){
+  if(!sports[id]) return;
+  rankingSportId = id;
   rankingMode = 'sport';
-  resetScoreSelection();
   renderAll();
 }
 
@@ -1138,8 +1155,12 @@ function renderScoreForm(){
   const el = document.getElementById('scoreForm');
   if(!el) return;
 
-  if(!currentSportId){
+  if(!sortedSportEntries().length){
     el.innerHTML = `<p class="picker-hint">Ajoute d'abord une discipline dans l'onglet Sports.</p>`;
+    return;
+  }
+  if(!currentSportId){
+    el.innerHTML = `<p class="picker-hint">👆 Choisis d'abord un sport dans la liste ci-dessus pour saisir un résultat.</p>`;
     return;
   }
 
@@ -1302,6 +1323,7 @@ function renderScoreHistory(){
   if(!currentSportId){
     listEl.innerHTML = '';
     emptyEl.style.display = 'block';
+    emptyEl.querySelector('p').textContent = "Choisis un sport dans la liste ci-dessus pour voir ses résultats.";
     return;
   }
   const ms = matchesBySport[currentSportId] || {};
@@ -1410,40 +1432,50 @@ function showToast(msg){
 function renderAll(){
   renderPlayers();
   renderSports();
-  renderSportSelect('sportSelectScore', false);
-  renderSportSelect('sportSelectRanking', true);
+  renderScoreSportSelect();
+  renderRankingSportSelect();
   renderFormatTabs();
   renderScoreForm();
   renderScoreHistory();
   renderRanking();
 }
 
-function renderSportSelect(selectId, includeGeneral){
-  const el = document.getElementById(selectId);
+function renderScoreSportSelect(){
+  const el = document.getElementById('sportSelectScore');
   if(!el) return;
   const entries = sortedSportEntries();
   if(!entries.length){
     el.innerHTML = `<option value="">Ajoute une discipline dans l'onglet Sports</option>`;
     return;
   }
-  let html = entries.map(([id,s]) => `<option value="${id}">${s.emoji||'🏅'} ${escapeHtml(s.name)}</option>`).join('');
-  if(includeGeneral){
-    html += `<option value="__general__">🌐 Général — toutes disciplines</option>`;
-  }
-  el.innerHTML = html;
-  if(includeGeneral && rankingMode==='general'){
-    el.value = '__general__';
-  } else if(currentSportId && sports[currentSportId]){
-    el.value = currentSportId;
-  }
+  const placeholderSelected = !currentSportId;
+  el.innerHTML =
+    `<option value="" ${placeholderSelected?'selected':''} disabled>— Choisis un sport —</option>` +
+    entries.map(([id,s]) => `<option value="${id}">${s.emoji||'🏅'} ${escapeHtml(s.name)}</option>`).join('');
+  el.value = currentSportId || '';
 }
 
-window.handleSportSelect = function(value, includeGeneral){
-  if(includeGeneral && value === '__general__'){
-    setRankingMode('general');
-  } else if(value){
-    selectSport(value);
+function renderRankingSportSelect(){
+  const el = document.getElementById('sportSelectRanking');
+  if(!el) return;
+  const entries = sortedSportEntries();
+  if(!entries.length){
+    el.innerHTML = `<option value="">Ajoute une discipline dans l'onglet Sports</option>`;
+    return;
   }
+  el.innerHTML =
+    `<option value="__general__">🌐 Général — toutes disciplines</option>` +
+    entries.map(([id,s]) => `<option value="${id}">${s.emoji||'🏅'} ${escapeHtml(s.name)}</option>`).join('');
+  el.value = rankingMode === 'general' ? '__general__' : (rankingSportId || '__general__');
+}
+
+window.handleScoreSportSelect = function(value){
+  if(value) selectScoreSport(value);
+}
+
+window.handleRankingSportSelect = function(value){
+  if(value === '__general__') setRankingMode('general');
+  else if(value) selectRankingSport(value);
 }
 
 function sortedPlayerEntries(){
@@ -1590,8 +1622,8 @@ function renderRanking(){
     ranking = computeGlobalRanking();
     headingEl.textContent = 'Classement général — toutes disciplines';
   } else {
-    ranking = currentSportId ? computeRanking(currentSportId) : [];
-    const s = currentSportId ? sports[currentSportId] : null;
+    ranking = rankingSportId ? computeRanking(rankingSportId) : [];
+    const s = rankingSportId ? sports[rankingSportId] : null;
     headingEl.textContent = s ? `Classement — ${s.emoji||'🏅'} ${s.name}` : 'Classement';
   }
   const podiumEl = document.getElementById('podium');
