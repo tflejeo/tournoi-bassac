@@ -355,8 +355,8 @@ main{padding-bottom:20px;}
   border-radius:8px; font-weight:600; white-space:nowrap;
 }
 .rank-stat .rank-stat-label{color:var(--text-faint); margin-right:2px;}
-.rank-stat.diff-pos{color:var(--green);}
-.rank-stat.diff-neg{color:var(--red);}
+.rank-stat.winrate-pos{color:var(--green);}
+.rank-stat.winrate-neg{color:var(--red);}
 .rank-pts-badge{
   font-family:var(--font-display); font-size:18px; font-weight:700; color:var(--red);
   flex-shrink:0; text-align:right; min-width:40px;
@@ -1580,12 +1580,16 @@ function computeRanking(sportId){
     }
   });
 
-  const arr = Object.values(stats).map(s => ({...s, diff: s.sf - s.sa, points: s.wins*2}));
+  const arr = Object.values(stats).map(s => ({
+    ...s,
+    winRate: s.played>0 ? Math.round((s.wins/s.played)*100) : 0,
+    points: s.wins*2
+  }));
   arr.sort((a,b) => {
     if(b.points !== a.points) return b.points - a.points;
-    if(b.diff !== a.diff) return b.diff - a.diff;
+    if(b.winRate !== a.winRate) return b.winRate - a.winRate;
     if(b.wins !== a.wins) return b.wins - a.wins;
-    return b.sf - a.sf;
+    return b.played - a.played;
   });
   return arr;
 }
@@ -1609,12 +1613,15 @@ function computeGlobalRanking(){
       totals[r.id].bySport[sid] = r.points;
     });
   });
-  const arr = Object.values(totals).map(t => ({...t, diff: t.sf - t.sa}));
+  const arr = Object.values(totals).map(t => ({
+    ...t,
+    winRate: t.played>0 ? Math.round((t.wins/t.played)*100) : 0
+  }));
   arr.sort((a,b) => {
     if(b.points !== a.points) return b.points - a.points;
-    if(b.diff !== a.diff) return b.diff - a.diff;
+    if(b.winRate !== a.winRate) return b.winRate - a.winRate;
     if(b.wins !== a.wins) return b.wins - a.wins;
-    return b.sf - a.sf;
+    return b.played - a.played;
   });
   return arr;
 }
@@ -1666,7 +1673,7 @@ function renderRanking(){
           <span class="rank-stat"><span class="rank-stat-label">J</span>${r.played}</span>
           <span class="rank-stat"><span class="rank-stat-label">V</span>${r.wins}</span>
           <span class="rank-stat"><span class="rank-stat-label">D</span>${r.losses}</span>
-          <span class="rank-stat ${r.diff>0?'diff-pos':r.diff<0?'diff-neg':''}"><span class="rank-stat-label">Diff</span>${r.diff>0?'+':''}${r.diff}</span>
+          <span class="rank-stat ${r.winRate>=50?'winrate-pos':'winrate-neg'}"><span class="rank-stat-label">%V</span>${r.winRate}%</span>
         </div>
         ${rankingMode==='general' ? `<div class="badge-row">${sortedSportEntries().map(([sid,s]) => `<span class="sport-badge" title="${escapeHtml(s.name)}">${s.emoji||'🏅'} ${r.bySport?.[sid] ?? 0}</span>`).join('')}</div>` : ''}
       </div>
