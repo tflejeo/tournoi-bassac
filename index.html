@@ -181,7 +181,8 @@ main{padding-bottom:20px;}
   -webkit-overflow-scrolling:touch;
 }
 .filter-row::-webkit-scrollbar{display:none;}
-.filter-row.secondary{ top:calc(112px + var(--safe-top)); z-index:14; }
+.filter-row.secondary{ top:calc(112px + var(--safe-top)); z-index:14; flex-wrap:wrap; overflow-x:visible; position:static; padding:2px 2px 10px; background:none; }
+.sport-select-wrap{ margin: 4px 0 4px; position:sticky; top:calc(66px + var(--safe-top)); z-index:16; padding-bottom:8px; background: linear-gradient(180deg, var(--bg) 75%, rgba(11,13,16,0)); }
 .chip{
   flex-shrink:0; background:var(--surface-2); border:1px solid var(--border); color:var(--text-dim);
   padding: 8px 15px; border-radius:20px; font-size:13px; font-weight:600; white-space:nowrap; transition:.15s;
@@ -229,6 +230,22 @@ main{padding-bottom:20px;}
 .picker-chips .chip.team-a.active{ background:var(--red); border-color:var(--red); color:#fff; }
 .picker-chips .chip.team-b.active{ background:#2f8fd6; border-color:#2f8fd6; color:#fff; }
 .picker-chips .chip.winner.active{ background: linear-gradient(180deg, var(--gold), #c78f1f); border-color:var(--gold); color:#1a1200; }
+.player-select{
+  width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text);
+  border-radius: var(--radius); padding: 13px 16px; font-size:15px; outline:none; appearance:none;
+  -webkit-appearance:none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2398a2ad' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position: right 14px center; background-size:18px;
+  padding-right:40px;
+}
+.player-select:focus{border-color:var(--red); box-shadow:0 0 0 3px var(--red-glow);}
+.player-select option{background:var(--surface-2); color:var(--text);}
+.selected-tag{ display:inline-flex; align-items:center; gap:7px; }
+.selected-tag button{
+  background:rgba(255,255,255,.18); border:none; color:inherit; font-weight:800; cursor:pointer;
+  padding:0; line-height:1; font-size:13px; width:16px; height:16px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
 .score-entry-row{ display:flex; align-items:center; justify-content:center; gap:14px; margin: 18px 0 6px; }
 .score-entry-box{ text-align:center; flex:1; max-width:120px; }
 .score-entry-box label{ display:block; font-size:11px; color:var(--text-dim); font-weight:700; margin-bottom:6px; text-transform:uppercase; }
@@ -317,22 +334,34 @@ main{padding-bottom:20px;}
 .podium-slot.p2 .podium-bar{height:62px; background: linear-gradient(180deg, #33363a, #202226); border-top:2px solid var(--silver);}
 .podium-slot.p3 .podium-bar{height:44px; background: linear-gradient(180deg, #3a2a1c, #241a12); border-top:2px solid var(--bronze);}
 
-.rank-table-wrap{overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface);}
-table.rank-table{width:100%; border-collapse:collapse; font-size:13px; min-width:560px;}
-table.rank-table th{
-  text-align:center; padding:10px 6px; font-family:var(--font-display); text-transform:uppercase; font-size:11px;
-  letter-spacing:.4px; color:var(--text-dim); border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--surface);
+.rank-list{display:flex; flex-direction:column; gap:8px; margin-top:4px;}
+.rank-card{
+  display:flex; align-items:center; gap:10px;
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  padding: 11px 13px;
 }
-table.rank-table th:first-child, table.rank-table td:first-child{text-align:left; padding-left:14px;}
-table.rank-table th:nth-child(2), table.rank-table td:nth-child(2){text-align:left;}
-table.rank-table td{text-align:center; padding:11px 6px; border-bottom:1px solid var(--border);}
-table.rank-table tr:last-child td{border-bottom:none;}
-table.rank-table tr.top3 td:first-child{color:var(--gold); font-weight:800;}
-.rank-name-cell{display:flex; align-items:center; gap:8px; font-weight:600;}
-.mini-avatar{width:24px;height:24px;border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#fff; font-family:var(--font-display);}
-.pts-cell{font-family:var(--font-display); font-size:15px; font-weight:600; color:var(--red);}
-.diff-pos{color:var(--green);}
-.diff-neg{color:var(--red);}
+.rank-card.top3{ border-color: rgba(243,183,59,.35); }
+.rank-position{
+  font-family:var(--font-display); font-size:17px; font-weight:700; color:var(--text-dim);
+  width:22px; flex-shrink:0; text-align:center;
+}
+.rank-card.top3 .rank-position{ color:var(--gold); }
+.rank-card-info{flex:1; min-width:0;}
+.rank-card-name{display:flex; align-items:center; gap:8px; font-weight:700; font-size:14.5px;}
+.rank-card-avatar{width:26px;height:26px;border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; color:#fff; font-family:var(--font-display);}
+.rank-card-stats{display:flex; flex-wrap:wrap; gap:5px; margin-top:5px;}
+.rank-stat{
+  font-size:10.5px; color:var(--text-dim); background:var(--surface-2); padding:2px 7px;
+  border-radius:8px; font-weight:600; white-space:nowrap;
+}
+.rank-stat .rank-stat-label{color:var(--text-faint); margin-right:2px;}
+.rank-stat.diff-pos{color:var(--green);}
+.rank-stat.diff-neg{color:var(--red);}
+.rank-pts-badge{
+  font-family:var(--font-display); font-size:18px; font-weight:700; color:var(--red);
+  flex-shrink:0; text-align:right; min-width:40px;
+}
+.rank-pts-badge span{display:block; font-family:var(--font-body); font-size:9.5px; color:var(--text-faint); font-weight:600; text-transform:uppercase; letter-spacing:.3px;}
 
 /* ============ BOTTOM NAV ============ */
 .bottom-nav{
@@ -475,7 +504,9 @@ table.rank-table tr.top3 td:first-child{color:var(--gold); font-weight:800;}
 
     <!-- SAISIE D'UN SCORE -->
     <section id="view-score" class="view">
-      <div class="filter-row" id="sportTabsScore"></div>
+      <div class="sport-select-wrap">
+        <select id="sportSelectScore" class="player-select" onchange="handleSportSelect(this.value, false)"></select>
+      </div>
       <div class="filter-row secondary" id="formatTabsScore"></div>
       <div id="scoreForm" class="score-card"></div>
       <h3 class="section-heading" style="margin-top:20px;">Derniers résultats</h3>
@@ -493,19 +524,12 @@ table.rank-table tr.top3 td:first-child{color:var(--gold); font-weight:800;}
 
     <!-- CLASSEMENT -->
     <section id="view-ranking" class="view">
-      <div class="filter-row" id="sportTabsRanking"></div>
+      <div class="sport-select-wrap">
+        <select id="sportSelectRanking" class="player-select" onchange="handleSportSelect(this.value, true)"></select>
+      </div>
       <h3 class="section-heading" id="rankingHeading">Classement</h3>
       <div id="podium" class="podium"></div>
-      <div class="rank-table-wrap">
-        <table class="rank-table">
-          <thead>
-            <tr>
-              <th>#</th><th>Joueur</th><th>J</th><th>V</th><th>D</th><th>Diff</th><th>Pts</th>
-            </tr>
-          </thead>
-          <tbody id="rankBody"></tbody>
-        </table>
-      </div>
+      <div id="rankList" class="rank-list"></div>
       <div id="rankingEmpty" class="empty-state" style="display:none;">
         <span class="emoji">🏆</span>
         <strong>Classement vide</strong>
@@ -1037,31 +1061,53 @@ function activePlayerEntries(){
   return sortedPlayerEntries().filter(([,p]) => p.active !== false);
 }
 
-function playerChipList(selectedIds, disabledIds, onClickFn, extraClass){
-  const entries = activePlayerEntries();
-  if(!entries.length){
+function playerPicker(selectedIds, excludedIds, selectId, addFnName, removeFnName, placeholder, extraClass){
+  const available = activePlayerEntries().filter(([id]) => !selectedIds.includes(id) && !excludedIds.includes(id));
+  const selectHtml = `
+    <select id="${selectId}" class="player-select" onchange="if(this.value){${addFnName}(this.value);} this.value='';">
+      <option value="" selected>${placeholder}</option>
+      ${available.map(([id,p]) => `<option value="${id}">${escapeHtml(p.name)}</option>`).join('')}
+    </select>
+  `;
+  const tagsHtml = selectedIds.length
+    ? `<div class="picker-chips" style="margin-top:9px;">` + selectedIds.map(id => {
+        const p = players[id];
+        return `<span class="chip active selected-tag ${extraClass||''}">${escapeHtml(p?.name||'?')}<button type="button" onclick="${removeFnName}('${id}')" aria-label="Retirer">×</button></span>`;
+      }).join('') + `</div>`
+    : `<p class="picker-hint" style="margin-top:6px;">Aucun joueur sélectionné.</p>`;
+  if(!activePlayerEntries().length){
     return `<p class="picker-hint">Ajoute des joueurs dans l'onglet Joueurs pour pouvoir saisir un score.</p>`;
   }
-  return `<div class="picker-chips">` + entries.map(([id,p]) => {
-    const sel = selectedIds.includes(id);
-    const disabled = disabledIds.includes(id) && !sel;
-    return `<button class="chip ${extraClass||''} ${sel?'active':''}" ${disabled?'disabled':''} onclick="${onClickFn}('${id}')">${escapeHtml(p.name)}</button>`;
-  }).join('') + `</div>`;
+  return selectHtml + tagsHtml;
 }
 
-window.toggleTeamA = function(id){
-  if(selTeamA.includes(id)) selTeamA = selTeamA.filter(x=>x!==id);
-  else { selTeamA.push(id); selTeamB = selTeamB.filter(x=>x!==id); }
+window.addToTeamA = function(id){
+  if(!selTeamA.includes(id)) selTeamA.push(id);
+  selTeamB = selTeamB.filter(x=>x!==id);
   renderScoreForm();
 }
-window.toggleTeamB = function(id){
-  if(selTeamB.includes(id)) selTeamB = selTeamB.filter(x=>x!==id);
-  else { selTeamB.push(id); selTeamA = selTeamA.filter(x=>x!==id); }
+window.removeFromTeamA = function(id){
+  selTeamA = selTeamA.filter(x=>x!==id);
+  if(selDuelWinner==='A' && selTeamA.length===0) selDuelWinner = null;
   renderScoreForm();
 }
-window.toggleFfaParticipant = function(id){
-  if(selFfa.includes(id)){ selFfa = selFfa.filter(x=>x!==id); if(selFfaWinner===id) selFfaWinner = null; }
-  else selFfa.push(id);
+window.addToTeamB = function(id){
+  if(!selTeamB.includes(id)) selTeamB.push(id);
+  selTeamA = selTeamA.filter(x=>x!==id);
+  renderScoreForm();
+}
+window.removeFromTeamB = function(id){
+  selTeamB = selTeamB.filter(x=>x!==id);
+  if(selDuelWinner==='B' && selTeamB.length===0) selDuelWinner = null;
+  renderScoreForm();
+}
+window.addFfaParticipant = function(id){
+  if(!selFfa.includes(id)) selFfa.push(id);
+  renderScoreForm();
+}
+window.removeFfaParticipant = function(id){
+  selFfa = selFfa.filter(x=>x!==id);
+  if(selFfaWinner===id) selFfaWinner = null;
   renderScoreForm();
 }
 window.setFfaWinner = function(id){
@@ -1073,8 +1119,8 @@ function renderFormatTabs(){
   const el = document.getElementById('formatTabsScore');
   if(!el) return;
   el.innerHTML = `
-    <button class="chip ${scoreFormat==='duel'?'active':''}" onclick="setScoreFormat('duel')">🤝 Duel (1v1, 2v2…)</button>
-    <button class="chip ${scoreFormat==='ffa'?'active':''}" onclick="setScoreFormat('ffa')">🎲 Multijoueurs (1 vainqueur)</button>
+    <button class="chip ${scoreFormat==='duel'?'active':''}" onclick="setScoreFormat('duel')">🤝 Duel</button>
+    <button class="chip ${scoreFormat==='ffa'?'active':''}" onclick="setScoreFormat('ffa')">🎲 Multijoueurs</button>
   `;
 }
 
@@ -1099,6 +1145,9 @@ function renderScoreForm(){
 
   const preserved = currentFormValues();
   const dateVal = preserved.matchDateInput || todayStr();
+  const formatHint = scoreFormat === 'duel'
+    ? `<p class="picker-hint" style="margin:0 0 12px;">1 vs 1, 2 vs 2, 3 vs 3… deux équipes s'affrontent.</p>`
+    : `<p class="picker-hint" style="margin:0 0 12px;">Partie à plusieurs (4, 8…) avec un seul vainqueur — idéal pour les jeux de société.</p>`;
   const dateBlock = `
     <div class="picker-group">
       <div class="picker-label">📅 Date du match</div>
@@ -1110,14 +1159,14 @@ function renderScoreForm(){
     const canSubmit = selTeamA.length>0 && selTeamB.length>0 && !!selDuelWinner;
     const scoreAVal = preserved.scoreAInput ?? '';
     const scoreBVal = preserved.scoreBInput ?? '';
-    el.innerHTML = dateBlock + `
+    el.innerHTML = formatHint + dateBlock + `
       <div class="picker-group">
         <div class="picker-label"><span class="tag-a">●</span> Équipe A</div>
-        ${playerChipList(selTeamA, selTeamB, 'toggleTeamA', 'team-a')}
+        ${playerPicker(selTeamA, selTeamB, 'selectTeamA', 'addToTeamA', 'removeFromTeamA', '+ Ajouter un joueur…', 'team-a')}
       </div>
       <div class="picker-group">
         <div class="picker-label"><span class="tag-b">●</span> Équipe B</div>
-        ${playerChipList(selTeamB, selTeamA, 'toggleTeamB', 'team-b')}
+        ${playerPicker(selTeamB, selTeamA, 'selectTeamB', 'addToTeamB', 'removeFromTeamB', '+ Ajouter un joueur…', 'team-b')}
       </div>
       <p class="picker-hint">1 joueur par équipe pour un 1v1, plusieurs pour du 2v2, 3v3…</p>
       <div class="picker-group">
@@ -1144,10 +1193,10 @@ function renderScoreForm(){
   } else {
     const canPickWinner = selFfa.length >= 2;
     const canSubmit = selFfa.length >= 2 && !!selFfaWinner;
-    el.innerHTML = dateBlock + `
+    el.innerHTML = formatHint + dateBlock + `
       <div class="picker-group">
         <div class="picker-label">🙋 Participants</div>
-        ${playerChipList(selFfa, [], 'toggleFfaParticipant', '')}
+        ${playerPicker(selFfa, [], 'selectFfa', 'addFfaParticipant', 'removeFfaParticipant', '+ Ajouter un participant…')}
         <p class="picker-hint">Sélectionne tous les participants de la partie (4, 8… ou plus), quel que soit le nombre.</p>
       </div>
       ${canPickWinner ? `
@@ -1361,26 +1410,40 @@ function showToast(msg){
 function renderAll(){
   renderPlayers();
   renderSports();
-  renderSportTabs('sportTabsScore', false);
-  renderSportTabs('sportTabsRanking', true);
+  renderSportSelect('sportSelectScore', false);
+  renderSportSelect('sportSelectRanking', true);
   renderFormatTabs();
   renderScoreForm();
   renderScoreHistory();
   renderRanking();
 }
 
-function renderSportTabs(containerId, includeGeneral){
-  const el = document.getElementById(containerId);
+function renderSportSelect(selectId, includeGeneral){
+  const el = document.getElementById(selectId);
   if(!el) return;
   const entries = sortedSportEntries();
-  let html = entries.map(([id,s]) => {
-    const active = includeGeneral ? (rankingMode==='sport' && id===currentSportId) : (id===currentSportId);
-    return `<button class="chip ${active?'active':''}" onclick="selectSport('${id}')">${s.emoji||'🏅'} ${escapeHtml(s.name)}</button>`;
-  }).join('');
-  if(includeGeneral){
-    html += `<button class="chip chip-general ${rankingMode==='general'?'active':''}" onclick="setRankingMode('general')">🌐 Général</button>`;
+  if(!entries.length){
+    el.innerHTML = `<option value="">Ajoute une discipline dans l'onglet Sports</option>`;
+    return;
   }
-  el.innerHTML = html || `<span style="color:var(--text-faint); font-size:12.5px; padding:8px 4px;">Ajoute une discipline dans l'onglet Sports</span>`;
+  let html = entries.map(([id,s]) => `<option value="${id}">${s.emoji||'🏅'} ${escapeHtml(s.name)}</option>`).join('');
+  if(includeGeneral){
+    html += `<option value="__general__">🌐 Général — toutes disciplines</option>`;
+  }
+  el.innerHTML = html;
+  if(includeGeneral && rankingMode==='general'){
+    el.value = '__general__';
+  } else if(currentSportId && sports[currentSportId]){
+    el.value = currentSportId;
+  }
+}
+
+window.handleSportSelect = function(value, includeGeneral){
+  if(includeGeneral && value === '__general__'){
+    setRankingMode('general');
+  } else if(value){
+    selectSport(value);
+  }
 }
 
 function sortedPlayerEntries(){
@@ -1429,16 +1492,13 @@ function renderSports(){
     const ms = matchesBySport[id] || {};
     const total = Object.keys(ms).length;
     return `
-    <div class="sport-card ${id===currentSportId?'current':''}">
+    <div class="sport-card">
       <div class="player-avatar" style="background:${colorFor(id)}; font-size:18px;">${s.emoji||'🏅'}</div>
       <div class="player-info">
         <div class="player-name">${escapeHtml(s.name)}</div>
         <div class="player-meta">${total} résultat${total>1?'s':''} enregistré${total>1?'s':''}</div>
       </div>
       <div class="player-actions">
-        ${id===currentSportId
-          ? `<span class="chip active" style="pointer-events:none;">Active</span>`
-          : `<button class="btn-sm" onclick="selectSport('${id}')">Choisir</button>`}
         <button class="btn-icon-sm" onclick="deleteSport('${id}')" aria-label="Supprimer">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z"/></svg>
         </button>
@@ -1535,7 +1595,7 @@ function renderRanking(){
     headingEl.textContent = s ? `Classement — ${s.emoji||'🏅'} ${s.name}` : 'Classement';
   }
   const podiumEl = document.getElementById('podium');
-  const bodyEl = document.getElementById('rankBody');
+  const listEl = document.getElementById('rankList');
   const hasPlayed = ranking.some(r => r.played > 0);
 
   document.getElementById('rankingEmpty').style.display = ranking.length ? 'none' : 'block';
@@ -1560,24 +1620,22 @@ function renderRanking(){
     podiumEl.innerHTML = '';
   }
 
-  bodyEl.innerHTML = ranking.map((r,i) => `
-    <tr class="${i<3?'top3':''}">
-      <td>${i+1}</td>
-      <td>
-        <div class="rank-name-cell">
-          <div class="mini-avatar" style="background:${colorFor(r.id)};">${initials(r.name)}</div>
-          <div>
-            ${escapeHtml(r.name)}
-            ${rankingMode==='general' ? `<div class="badge-row">${sortedSportEntries().map(([sid,s]) => `<span class="sport-badge" title="${escapeHtml(s.name)}">${s.emoji||'🏅'} ${r.bySport?.[sid] ?? 0}</span>`).join('')}</div>` : ''}
-          </div>
+  listEl.innerHTML = ranking.map((r,i) => `
+    <div class="rank-card ${i<3?'top3':''}">
+      <div class="rank-position">${i+1}</div>
+      <div class="rank-card-avatar" style="background:${colorFor(r.id)};">${initials(r.name)}</div>
+      <div class="rank-card-info">
+        <div class="rank-card-name">${escapeHtml(r.name)}</div>
+        <div class="rank-card-stats">
+          <span class="rank-stat"><span class="rank-stat-label">J</span>${r.played}</span>
+          <span class="rank-stat"><span class="rank-stat-label">V</span>${r.wins}</span>
+          <span class="rank-stat"><span class="rank-stat-label">D</span>${r.losses}</span>
+          <span class="rank-stat ${r.diff>0?'diff-pos':r.diff<0?'diff-neg':''}"><span class="rank-stat-label">Diff</span>${r.diff>0?'+':''}${r.diff}</span>
         </div>
-      </td>
-      <td>${r.played}</td>
-      <td>${r.wins}</td>
-      <td>${r.losses}</td>
-      <td class="${r.diff>0?'diff-pos':r.diff<0?'diff-neg':''}">${r.diff>0?'+':''}${r.diff}</td>
-      <td class="pts-cell">${r.points}</td>
-    </tr>
+        ${rankingMode==='general' ? `<div class="badge-row">${sortedSportEntries().map(([sid,s]) => `<span class="sport-badge" title="${escapeHtml(s.name)}">${s.emoji||'🏅'} ${r.bySport?.[sid] ?? 0}</span>`).join('')}</div>` : ''}
+      </div>
+      <div class="rank-pts-badge">${r.points}<span>pts</span></div>
+    </div>
   `).join('');
 }
 
